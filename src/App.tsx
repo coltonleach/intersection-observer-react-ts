@@ -3,13 +3,15 @@ import axios from 'axios'
 import { authorData } from './@types/authorData'
 import './App.css'
 import Author from './components/Author'
-import Description from './components/Description'
+import Quote from './components/Quote'
 import Header from './components/Header'
-
-const queryClient = new QueryClient({})
+import { useEffect, useRef, useState } from 'react'
 
 function App() {
-  // const [data, setDate] = useState()
+  const [active, setActive] = useState(1)
+  const quoteRefs = useRef([])
+  const quoteContainerRef = useRef(null)
+  quoteRefs.current = []
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['author'],
@@ -20,22 +22,74 @@ function App() {
     refetchOnWindowFocus: false,
   })
 
-  console.log(data)
+  useEffect(() => {
+    quoteRefs.current.forEach((quote, index) => {
+      observer.observe(quote)
+    })
+  }, [data])
+
+  const observerCallback = (entries, observer: IntersectionObserver) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting)
+        setActive(Number(entry.target.getAttribute('data-author')))
+    })
+  }
+
+  const options = {
+    root: quoteContainerRef.current,
+    rootMargin: '-50% 0px',
+  }
+
+  const observer = new IntersectionObserver(observerCallback, options)
 
   if (isLoading) {
     return <div>loading..</div>
   }
 
   if (isError) {
-    return <div>{error}</div>
+    console.log(error)
+    return <div>error</div>
+  }
+
+  const addRefs = (el: React.HTMLAttributes<HTMLDivElement>) => {
+    if (el) quoteRefs.current.push(el)
   }
 
   return (
     <>
       {/* <Header /> */}
       <div className='container'>
-        <Author name={data[0].name} />
-        <Description />
+        <div className='author-container'>
+          {data.map((author: authorData) => (
+            <h2
+              key={author.id}
+              className={`author ${author.id === active ? '' : 'hide'}`}
+              data-author={author.id}
+              data-active-author={author.id === active}
+            >
+              {author.name}
+            </h2>
+          ))}
+        </div>
+        <div className='quote-container' ref={quoteContainerRef}>
+          {data.map((author: authorData) => (
+            <div
+              key={author.id}
+              className='author-quotes'
+              data-active-author={author.id === active}
+              data-author={author.id}
+              ref={addRefs}
+            >
+              {author.quotes.map((quote) => (
+                <p key={quote} className='quote'>
+                  {quote}
+                </p>
+              ))}
+            </div>
+          ))}
+        </div>
+        {/* <Author data={data} />
+        <Quote data={data} /> */}
       </div>
     </>
   )

@@ -1,5 +1,5 @@
-export interface authorData {
+export type authorData = {
   id: number
   name: string
-  quote: string[]
+  quotes: string[]
 }
