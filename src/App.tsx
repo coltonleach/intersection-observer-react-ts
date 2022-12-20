@@ -9,8 +9,10 @@ import { useEffect, useRef, useState } from 'react'
 
 function App() {
   const [active, setActive] = useState(1)
-  const quoteRefs = useRef([])
   const quoteContainerRef = useRef(null)
+  const authorRefs = useRef([])
+  const quoteRefs = useRef([])
+  authorRefs.current = []
   quoteRefs.current = []
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -29,9 +31,11 @@ function App() {
   }, [data])
 
   const observerCallback = (entries, observer: IntersectionObserver) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting)
+    entries.forEach((entry, index) => {
+      if (entry.isIntersecting) {
         setActive(Number(entry.target.getAttribute('data-author')))
+        console.log(authorRefs.current[index])
+      }
     })
   }
 
@@ -51,7 +55,11 @@ function App() {
     return <div>error</div>
   }
 
-  const addRefs = (el: React.HTMLAttributes<HTMLDivElement>) => {
+  const addAuthorRefs = (el: React.HTMLAttributes<HTMLHeadingElement>) => {
+    if (el) authorRefs.current.push(el)
+  }
+
+  const addQuoteRefs = (el: React.HTMLAttributes<HTMLDivElement>) => {
     if (el) quoteRefs.current.push(el)
   }
 
@@ -66,6 +74,7 @@ function App() {
               className={`author ${author.id === active ? '' : 'hide'}`}
               data-author={author.id}
               data-active-author={author.id === active}
+              ref={addAuthorRefs}
             >
               {author.name}
             </h2>
@@ -78,7 +87,7 @@ function App() {
               className='author-quotes'
               data-active-author={author.id === active}
               data-author={author.id}
-              ref={addRefs}
+              ref={addQuoteRefs}
             >
               {author.quotes.map((quote) => (
                 <p key={quote} className='quote'>
